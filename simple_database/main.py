@@ -134,10 +134,10 @@ class _table_cls(object):
     
     def all(self):
         """Returns a generator of all records within the table"""
-        table_data = [data[1] for data in self._load_data().items()
+        table_data = [data for data in self._load_data().items()
                       if 'headers' not in data]
-        for row in table_data:
-            yield _QuerySet(**row)
+        for row in sorted(table_data):
+            yield _QuerySet(**row[1])
             
 
     
