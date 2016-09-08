@@ -77,11 +77,30 @@ class _table_cls(object):
         return self._load_data()['headers']
 
     def query(self, **kwargs):
-        pass
+        table_data = self._load_data()
+        for key, val in table_data.items():
+            if key == 'headers':
+                del table_data[key]
+                continue
+            for kw in kwargs:
+                if val[kw] != kwargs[kw]:
+                    del table_data[key]
+                    continue
+        
+        for k, v in table_data.items():
+            yield _QuerySet(**v)
+        
+        
+        
     
     def all(self):
-        pass
-
+        table_data = [data[1] for data in self._load_data().items()
+                      if 'headers' not in data]
+        for row in table_data:
+            yield _QuerySet(**row)
+            
+            
+    
     def insert(self, *args):
         table_data = self._load_data()
         table_headers = copy.deepcopy(self._load_data()['headers'])
@@ -95,10 +114,11 @@ class _table_cls(object):
             if table_headers[index]['type'] == 'date':
                 tbl_hdr_type = 'datetime.date'
             if not isinstance(arg, locate(tbl_hdr_type)):
-            #if not type(arg).__name__ == tbl_hdr_type:
                 raise exceptions.ValidationError(
                                 'Invalid type of field "{0}": Given "{1}", expected "{2}"'.
-                                 format(table_headers[index]['name'], type(arg).__name__, table_headers[index]['type']))
+                                 format(table_headers[index]['name'], 
+                                        type(arg).__name__, 
+                                        table_headers[index]['type']))
             if isinstance(arg, datetime.date):
                 arg = arg.isoformat()
             row_data[table_headers[index]['name']] = arg
@@ -107,20 +127,10 @@ class _table_cls(object):
             json_data = json.dumps(table_data)
             f.write(json_data)
             
-        pass
     
-class QuerySet(object):
+
+class _QuerySet(object):
     
-    def __init__(self, query):
-        self.counter = 0
-        self.query = query
-    
-    def __iter__(self):
-        return self
-        
-    def __next__(self):
-        pass
-    
-    next = __next__
-    
-    
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
